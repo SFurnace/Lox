@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Lox.fs" />
+      <Compile Include="Lox.fs" />
     </ItemGroup>
 
 </Project>
