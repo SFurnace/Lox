@@ -1,11 +1,11 @@
-﻿module rec LoxFsharp.Lox
+﻿namespace LoxFsharp
 
 open System.IO
-open LoxFsharp.Utils
-open LoxFsharp.Scanner
 
 type Lox() =
     let reporter = ErrReporter()
+
+    member this.hadError = reporter.hadError
 
     member this.run text =
         let scanner = Scanner(text, reporter)
@@ -30,16 +30,3 @@ type Lox() =
             this.run line
             reporter.hadError <- false
             this.runPrompt ()
-
-[<EntryPoint>]
-let main args =
-    let lox = Lox()
-
-    match args with
-    | [||] -> lox.runPrompt ()
-    | [| file |] -> lox.runFile file
-    | _ ->
-        eprintfn "Usage: lox [script]"
-        exit 64
-
-    0

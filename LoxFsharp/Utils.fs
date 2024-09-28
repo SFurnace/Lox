@@ -1,4 +1,4 @@
-﻿module LoxFsharp.Utils
+﻿namespace LoxFsharp
 
 type ErrReporter() =
     member val hadError = false with get, set

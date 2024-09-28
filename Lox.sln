@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LoxFsharp", "LoxFsharp\LoxFsharp.fsproj", "{E1EDD32A-BE40-4A3A-BCB4-A8E974224238}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LoxTest", "LoxTest\LoxTest.fsproj", "{1B6D0AED-E95F-41FC-A168-025B3FE65783}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E1EDD32A-BE40-4A3A-BCB4-A8E974224238}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E1EDD32A-BE40-4A3A-BCB4-A8E974224238}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1EDD32A-BE40-4A3A-BCB4-A8E974224238}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E1EDD32A-BE40-4A3A-BCB4-A8E974224238}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B6D0AED-E95F-41FC-A168-025B3FE65783}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B6D0AED-E95F-41FC-A168-025B3FE65783}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B6D0AED-E95F-41FC-A168-025B3FE65783}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B6D0AED-E95F-41FC-A168-025B3FE65783}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
