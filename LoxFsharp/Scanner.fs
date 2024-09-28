@@ -1,7 +1,6 @@
-﻿module LoxFsharp.Scanner
+﻿namespace LoxFsharp
 
 open System
-open LoxFsharp.Utils
 
 type TokenType =
     // Single-character tokens.
