@@ -6,6 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Include="Utils.fs" />
+      <Compile Include="Scanner.fs" />
       <Compile Include="Lox.fs" />
     </ItemGroup>
 
