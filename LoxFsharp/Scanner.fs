@@ -123,6 +123,30 @@ type Scanner(source: string, reporter: ErrReporter) =
 
     let addTokenSimple (typ: TokenType) = addToken typ null
 
+    let dropLineComment () =
+        while peek () <> '\n' && not (isAtEnd ()) do
+            advance () |> ignore
+
+    let dropBlockComment () =
+        let mutable depth = 1
+
+        while not (depth = 0) && not (isAtEnd ()) do
+            if peek () = '/' && peekNext () = '*' then
+                advance () |> ignore
+                advance () |> ignore
+                depth <- depth + 1
+            elif peek () = '*' && peekNext () = '/' then
+                advance () |> ignore
+                advance () |> ignore
+                depth <- depth - 1
+            elif match1 '\n' then
+                line <- line + 1
+            else
+                advance () |> ignore
+
+        if depth <> 0 then
+            reporter.error line "Unterminated block comment."
+
     let scanString () =
         while peek () <> '"' && not (isAtEnd ()) do
             if peek () = '\n' then
@@ -179,11 +203,9 @@ type Scanner(source: string, reporter: ErrReporter) =
         | '<' -> addTokenSimple (if match1 '=' then LESS_EQUAL else LESS)
         | '>' -> addTokenSimple (if match1 '=' then GREATER_EQUAL else GREATER)
         | '/' ->
-            if match1 '/' then
-                while (peek () <> '\n') && not (isAtEnd ()) do
-                    advance () |> ignore
-            else
-                addTokenSimple SLASH
+            if match1 '/' then dropLineComment ()
+            elif match1 '*' then dropBlockComment ()
+            else addTokenSimple SLASH
         | ' '
         | '\r'
         | '\t' -> ()
