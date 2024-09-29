@@ -1,17 +1,20 @@
 module LoxFSharp.TestScanner
 
-open LoxFsharp
 open NUnit.Framework
 
 [<Test>]
 let ``Test Multi-Line Comment`` () =
-    let lox = Lox()
-    Assert.False lox.hadError
-
-    lox.run
-        """
-var a = 12;
+    let program =
+        """var a = 12;
 /* fjdlskafs /*
-fjdksla */*/"""
+fjdksla */*/
+"""
 
-    Assert.False lox.hadError
+    let reporter = LoxFsharp.ErrReporter()
+    let scanner = LoxFsharp.Scanner(program, reporter)
+    Assert.False reporter.hadError
+
+    for token in (scanner.scanTokens ()) do
+        printfn $"%A{token}"
+
+    Assert.False reporter.hadError
