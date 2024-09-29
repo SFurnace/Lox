@@ -1,92 +1,36 @@
 ﻿namespace LoxFsharp
 
 open System
-
-type TokenType =
-    // Single-character tokens.
-    | LEFT_PAREN
-    | RIGHT_PAREN
-    | LEFT_BRACE
-    | RIGHT_BRACE
-    | COMMA
-    | DOT
-    | MINUS
-    | PLUS
-    | SEMICOLON
-    | SLASH
-    | STAR
-    // One or two character tokens.
-    | BANG
-    | BANG_EQUAL
-    | EQUAL
-    | EQUAL_EQUAL
-    | GREATER
-    | GREATER_EQUAL
-    | LESS
-    | LESS_EQUAL
-    // Literals.
-    | IDENTIFIER
-    | STRING
-    | NUMBER
-    // Keywords.
-    | AND
-    | CLASS
-    | ELSE
-    | FALSE
-    | FUN
-    | FOR
-    | IF
-    | NIL
-    | OR
-    | PRINT
-    | RETURN
-    | SUPER
-    | THIS
-    | TRUE
-    | VAR
-    | WHILE
-    | EOF
-
-[<Struct>]
-type Token =
-    { typ: TokenType
-      lexme: string
-      literal: Object
-      line: int }
-
-    override this.ToString() =
-        $"{this.typ} %s{this.lexme} %A{this.literal}"
+open System.Collections.Generic
 
 type Scanner(source: string, reporter: ErrReporter) =
     static let keywords =
         Map
-            [ "and", AND
-              "class", CLASS
-              "else", ELSE
-              "false", FALSE
-              "for", FOR
-              "fun", FUN
-              "if", IF
-              "nil", NIL
-              "or", OR
-              "print", PRINT
-              "return", RETURN
-              "super", SUPER
-              "this", THIS
-              "true", TRUE
-              "var", VAR
-              "while", WHILE ]
+            [ "and", TokenType.AND
+              "class", TokenType.CLASS
+              "else", TokenType.ELSE
+              "false", TokenType.FALSE
+              "for", TokenType.FOR
+              "fun", TokenType.FUN
+              "if", TokenType.IF
+              "nil", TokenType.NIL
+              "or", TokenType.OR
+              "print", TokenType.PRINT
+              "return", TokenType.RETURN
+              "super", TokenType.SUPER
+              "this", TokenType.THIS
+              "true", TokenType.TRUE
+              "var", TokenType.VAR
+              "while", TokenType.WHILE ]
 
-
-    let tokens = ResizeArray<Token>()
+    let tokens: IList<Token> = ResizeArray()
     let mutable start = 0
     let mutable current = 0
     let mutable line = 1
 
     let isDigit c = '0' <= c && c <= '9'
 
-    let isAlpha c =
-        ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c = '_'
+    let isAlpha c = ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c = '_'
 
     let isAlphaDigit c = (isAlpha c) || (isDigit c)
 
@@ -104,14 +48,9 @@ type Scanner(source: string, reporter: ErrReporter) =
             current <- current + 1
             true
 
-    let peek () =
-        if isAtEnd () then char 0 else source[current]
+    let peek () = if isAtEnd () then char 0 else source[current]
 
-    let peekNext () =
-        if current + 1 >= source.Length then
-            char 0
-        else
-            source[current + 1]
+    let peekNext () = if current + 1 >= source.Length then char 0 else source[current + 1]
 
     let addToken (typ: TokenType) (literal: Object) =
         tokens.Add
@@ -144,7 +83,7 @@ type Scanner(source: string, reporter: ErrReporter) =
                 advance () |> ignore
 
         if depth <> 0 then
-            reporter.error line "Unterminated block comment."
+            reporter.error (line, "Unterminated block comment.")
 
     let scanString () =
         while peek () <> '"' && not (isAtEnd ()) do
@@ -154,11 +93,11 @@ type Scanner(source: string, reporter: ErrReporter) =
             advance () |> ignore
 
         if isAtEnd () then
-            reporter.error line "Unterminated string."
+            reporter.error (line, "Unterminated string.")
         else
             advance () |> ignore
             let value = source.Substring((start + 1), (current - 1) - (start + 1))
-            addToken STRING value
+            addToken TokenType.STRING value
 
     let scanNumber () =
         while isDigit (peek ()) do
@@ -170,7 +109,7 @@ type Scanner(source: string, reporter: ErrReporter) =
         while isDigit (peek ()) do
             advance () |> ignore
 
-        addToken NUMBER (Double.Parse(source.Substring(start, current - start)))
+        addToken TokenType.NUMBER (Double.Parse(source.Substring(start, current - start)))
 
     let scanIdentifier () =
         while isAlphaDigit (peek ()) do
@@ -181,30 +120,30 @@ type Scanner(source: string, reporter: ErrReporter) =
         if keywords.ContainsKey(text) then
             addTokenSimple (keywords[text])
         else
-            addTokenSimple IDENTIFIER
+            addTokenSimple TokenType.IDENTIFIER
 
     let scanToken () =
         let c = advance ()
 
         match c with
-        | '(' -> addTokenSimple LEFT_PAREN
-        | ')' -> addTokenSimple RIGHT_PAREN
-        | '{' -> addTokenSimple LEFT_BRACE
-        | '}' -> addTokenSimple RIGHT_BRACE
-        | ',' -> addTokenSimple COMMA
-        | '.' -> addTokenSimple DOT
-        | '-' -> addTokenSimple MINUS
-        | '+' -> addTokenSimple PLUS
-        | ';' -> addTokenSimple SEMICOLON
-        | '*' -> addTokenSimple STAR
-        | '!' -> addTokenSimple (if match1 '=' then BANG_EQUAL else BANG)
-        | '=' -> addTokenSimple (if match1 '=' then EQUAL_EQUAL else EQUAL)
-        | '<' -> addTokenSimple (if match1 '=' then LESS_EQUAL else LESS)
-        | '>' -> addTokenSimple (if match1 '=' then GREATER_EQUAL else GREATER)
+        | '(' -> addTokenSimple TokenType.LEFT_PAREN
+        | ')' -> addTokenSimple TokenType.RIGHT_PAREN
+        | '{' -> addTokenSimple TokenType.LEFT_BRACE
+        | '}' -> addTokenSimple TokenType.RIGHT_BRACE
+        | ',' -> addTokenSimple TokenType.COMMA
+        | '.' -> addTokenSimple TokenType.DOT
+        | '-' -> addTokenSimple TokenType.MINUS
+        | '+' -> addTokenSimple TokenType.PLUS
+        | ';' -> addTokenSimple TokenType.SEMICOLON
+        | '*' -> addTokenSimple TokenType.STAR
+        | '!' -> addTokenSimple (if match1 '=' then TokenType.BANG_EQUAL else TokenType.BANG)
+        | '=' -> addTokenSimple (if match1 '=' then TokenType.EQUAL_EQUAL else TokenType.EQUAL)
+        | '<' -> addTokenSimple (if match1 '=' then TokenType.LESS_EQUAL else TokenType.LESS)
+        | '>' -> addTokenSimple (if match1 '=' then TokenType.GREATER_EQUAL else TokenType.GREATER)
         | '/' ->
             if match1 '/' then dropLineComment ()
             elif match1 '*' then dropBlockComment ()
-            else addTokenSimple SLASH
+            else addTokenSimple TokenType.SLASH
         | ' '
         | '\r'
         | '\t' -> ()
@@ -212,17 +151,13 @@ type Scanner(source: string, reporter: ErrReporter) =
         | '"' -> scanString ()
         | c when isDigit c -> scanNumber ()
         | c when isAlpha c -> scanIdentifier ()
-        | _ -> reporter.error line $"Unexpect character {c}."
+        | _ -> reporter.error (line, $"Unexpect character {c}.")
 
     member this.scanTokens() =
         while not (isAtEnd ()) do
             start <- current
             scanToken ()
 
-        tokens.Add
-            { typ = EOF
-              lexme = ""
-              literal = null
-              line = line }
+        tokens.Add { typ = TokenType.EOF; lexme = ""; literal = null; line = line }
 
         tokens

@@ -10,9 +10,11 @@ type Lox() =
     member this.run text =
         let scanner = Scanner(text, reporter)
         let tokens = scanner.scanTokens ()
+        let parser = Parser(tokens, reporter)
+        let expr = parser.parse ()
 
-        for token in tokens do
-            printfn $"%A{token}"
+        if not this.hadError then
+            printfn $"%A{expr}"
 
     member this.runFile path =
         File.ReadAllText path |> this.run
