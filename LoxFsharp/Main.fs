@@ -1,4 +1,4 @@
-﻿module LoxFsharp.Program
+﻿module LoxFsharp.Main
 
 [<EntryPoint>]
 let main args =

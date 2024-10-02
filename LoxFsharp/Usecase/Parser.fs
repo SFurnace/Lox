@@ -28,6 +28,25 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
 
     let consume tokenType message = if check tokenType then advance () else error (peek ()) message
 
+    let synchronize () =
+        advance () |> ignore
+        let mutable mark = true
+
+        while not (isAtEnd ()) && mark do
+            if previous().typ = TokenType.SEMICOLON then
+                mark <- false
+            else
+                match peek().typ with
+                | TokenType.CLASS
+                | TokenType.FUN
+                | TokenType.VAR
+                | TokenType.FOR
+                | TokenType.IF
+                | TokenType.WHILE
+                | TokenType.PRINT
+                | TokenType.RETURN -> mark <- false
+                | _ -> advance () |> ignore
+
     member private this.match1([<ParamArray>] tokenTypes: TokenType[]) =
         if tokenTypes |> Array.exists check then
             advance () |> ignore
@@ -60,6 +79,17 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         expr
 
     member private this.term() =
+        let mutable expr = this.factor ()
+
+        while this.match1 (TokenType.PLUS, TokenType.MINUS) do
+            let operation = previous ()
+            let right = this.factor ()
+
+            expr <- Expr.Binary { left = expr; operator = operation; right = right }
+
+        expr
+
+    member private this.factor() =
         let mutable expr = this.unary ()
 
         while this.match1 (TokenType.SLASH, TokenType.STAR) do

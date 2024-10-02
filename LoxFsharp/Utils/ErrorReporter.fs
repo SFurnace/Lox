@@ -2,8 +2,11 @@
 
 open Microsoft.FSharp.Core
 
+exception RuntimeError of Token * string
+
 type ErrReporter() =
     member val hadError = false with get, set
+    member val hadRuntimeError = false with get, set
 
     member this.report line where message =
         printfn $"[line {line}] Error{where}: {message}"
@@ -16,3 +19,7 @@ type ErrReporter() =
             this.report token.line " at end" message
         else
             this.report token.line $" at '{token.lexme}'" message
+
+    member this.runtimeError(e: RuntimeError) =
+        this.hadRuntimeError <- true
+        printfn $"{e.Data1}\n[line {e.Data0.line}]"
