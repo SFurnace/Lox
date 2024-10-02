@@ -1,4 +1,4 @@
-module LoxFSharp.TestScanner
+module LoxTest.TestScanner
 
 open NUnit.Framework
 

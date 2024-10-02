@@ -6,13 +6,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Include="Token.fs" />
-      <Compile Include="AST.fs" />
-      <Compile Include="ErrorReporter.fs" />
-      <Compile Include="Scanner.fs" />
-      <Compile Include="Parser.fs" />
-      <Compile Include="Lox.fs" />
-      <Compile Include="Program.fs" />
+      <Compile Include="Entity\Token.fs" />
+      <Compile Include="Entity\AST.fs" />
+      <Compile Include="Utils\ErrorReporter.fs" />
+      <Compile Include="Utils\Helpers.fs" />
+      <Compile Include="Usecase\Scanner.fs" />
+      <Compile Include="Usecase\Parser.fs" />
+      <Compile Include="Usecase\Interpreter.fs" />
+      <Compile Include="Usecase\Lox.fs" />
+      <Compile Include="Main.fs" />
     </ItemGroup>
 
 </Project>
