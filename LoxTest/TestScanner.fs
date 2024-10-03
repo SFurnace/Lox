@@ -1,20 +1,27 @@
-module LoxTest.TestScanner
+namespace LoxTest
 
+open LoxFsharp
 open NUnit.Framework
 
-[<Test>]
-let ``Test Multi-Line Comment`` () =
-    let program =
-        """var a = 12;
-/* fjdlskafs /*
-fjdksla */*/
-"""
+[<TestFixture>]
+type TestScanner() =
 
-    let reporter = LoxFsharp.ErrReporter()
-    let scanner = LoxFsharp.Scanner(program, reporter)
-    Assert.False reporter.hadError
+    [<OneTimeSetUp>]
+    member this.``Setup``() = System.Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
 
-    for token in (scanner.scanTokens ()) do
-        printfn $"%A{token}"
+    [<Test>]
+    member this.``Test Multi-Line Comment``() =
+        let program =
+            """var a = 12;
+    /* fjdlskafs /*
+    fjdksla */*/
+    """
 
-    Assert.False reporter.hadError
+        let reporter = ErrReporter()
+        let scanner = Scanner(program, reporter)
+        Assert.False reporter.hadError
+
+        for token in (scanner.scanTokens ()) do
+            printfn $"%A{token}"
+
+        Assert.False reporter.hadError
