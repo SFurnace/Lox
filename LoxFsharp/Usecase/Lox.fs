@@ -7,16 +7,16 @@ type Lox() =
     let interpreter = Interpreter(reporter)
 
     member this.hadError = reporter.hadError
+    member this.hadRuntimeError = reporter.hadRuntimeError
 
     member this.run text =
         let scanner = Scanner(text, reporter)
         let tokens = scanner.scanTokens ()
         let parser = Parser(tokens, reporter)
-        let expr = parser.parse ()
+        let stmts = parser.parse ()
 
-        if not this.hadError && expr.IsSome then
-            let v = interpreter.interpret expr.Value
-            printfn $"%s{Utils.stringify v}"
+        if not this.hadError then
+            interpreter.interpret stmts
 
     member this.runFile path =
         File.ReadAllText path |> this.run
