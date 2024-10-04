@@ -2,6 +2,7 @@
 
 open System
 open System.Collections.Generic
+open Microsoft.FSharp.Core
 
 exception ParserError of Token * string
 
@@ -68,29 +69,84 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         let name = consume TokenType.IDENTIFIER "Expect variable name."
         let value = if this.match1 TokenType.EQUAL then Some(this.expression ()) else None
         consume TokenType.SEMICOLON "Expect ';' after variable declaration." |> ignore
-        Stmt.Var { identifier = name; value = value }
+        Stmt.VarDecl { identifier = name; value = value }
 
-    member private this.statement() =
+    member private this.statement() : Stmt =
         if this.match1 TokenType.PRINT then this.printStatement ()
+        elif this.match1 TokenType.WHILE then this.whileStatement ()
         elif this.match1 TokenType.LEFT_BRACE then this.block ()
+        elif this.match1 TokenType.FOR then this.forStatement ()
+        elif this.match1 TokenType.IF then this.ifStatement ()
         else this.expressionStatement ()
-
-    member private this.block() =
-        let statements = ResizeArray()
-
-        while not (check TokenType.RIGHT_BRACE) && not (isAtEnd ()) do
-            let s = this.declaration ()
-
-            if s.IsSome then
-                statements.Add(s.Value)
-
-        consume TokenType.RIGHT_BRACE "Expect '}' after block." |> ignore
-        Stmt.Block statements
 
     member private this.printStatement() =
         let expr = this.expression ()
         consume TokenType.SEMICOLON "Expect ';' after value." |> ignore
         Stmt.Print expr
+
+    member private this.whileStatement() =
+        consume TokenType.LEFT_PAREN "Expect '(' after 'while'." |> ignore
+        let condition = this.expression ()
+        consume TokenType.RIGHT_PAREN "Expect ')' after while condition." |> ignore
+        let body = this.statement ()
+        Stmt.While { condition = condition; body = body }
+
+    member private this.block() =
+        let declarations = ResizeArray()
+
+        while not (check TokenType.RIGHT_BRACE) && not (isAtEnd ()) do
+            let s = this.declaration ()
+
+            if s.IsSome then
+                declarations.Add(s.Value)
+
+        consume TokenType.RIGHT_BRACE "Expect '}' after block." |> ignore
+        Stmt.Block declarations
+
+    member private this.forStatement() =
+        consume TokenType.LEFT_PAREN "Expect '(' after 'for'." |> ignore
+        let mutable initializer: Option<Stmt> = None
+        let mutable condition: Option<Expr> = None
+        let mutable increment: Option<Expr> = None
+
+        if this.match1 TokenType.SEMICOLON then initializer <- None
+        elif this.match1 TokenType.VAR then initializer <- Some(this.varDeclaration ())
+        else initializer <- Some(this.expressionStatement ())
+
+        if not (check TokenType.SEMICOLON) then
+            condition <- Some(this.expression ())
+
+        consume TokenType.SEMICOLON "Expect ';' after loop condition." |> ignore
+
+        if not (check TokenType.RIGHT_PAREN) then
+            increment <- Some(this.expression ())
+
+        consume TokenType.RIGHT_PAREN "Expect ')' after loop condition." |> ignore
+
+        let mutable body = this.statement ()
+
+        if increment.IsSome then
+            body <- Stmt.Block(ResizeArray([ body; Stmt.Expr increment.Value ]))
+
+        if condition.IsNone then
+            condition <- Some(Expr.Literal LiteralExpr.True)
+
+        if initializer.IsSome then
+            Stmt.Block(ResizeArray([ initializer.Value; Stmt.While { condition = condition.Value; body = body } ]))
+        else
+            Stmt.While { condition = condition.Value; body = body }
+
+    member private this.ifStatement() =
+        consume TokenType.LEFT_PAREN "Expect '(' after 'if'." |> ignore
+        let condition = this.expression ()
+        consume TokenType.RIGHT_PAREN "Expect ')' after if condition." |> ignore
+        let thenStmt = this.statement ()
+
+        if this.match1 TokenType.ELSE then
+            let elseStmt = this.statement ()
+            Stmt.If { condition = condition; thenStmt = thenStmt; elseStmt = Some(elseStmt) }
+        else
+            Stmt.If { condition = condition; thenStmt = thenStmt; elseStmt = None }
 
     member private this.expressionStatement() =
         let expr = this.expression ()
@@ -100,7 +156,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
     member private this.expression() = this.assignment ()
 
     member private this.assignment() =
-        let expr = this.equality ()
+        let expr = this.``or`` ()
 
         if (this.match1 TokenType.EQUAL) then
             let equals = previous ()
@@ -111,6 +167,26 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
             | _ -> error equals "Invalid assignment target."
         else
             expr
+
+    member private this.``or``() =
+        let mutable expr = this.``and`` ()
+
+        while this.match1 TokenType.OR do
+            let operator = previous ()
+            let right = this.``and`` ()
+            expr <- Expr.Logical { left = expr; operator = operator; right = right }
+
+        expr
+
+    member private this.``and``() =
+        let mutable expr = this.equality ()
+
+        while this.match1 TokenType.AND do
+            let operator = previous ()
+            let right = this.equality ()
+            expr <- Expr.Logical { left = expr; operator = operator; right = right }
+
+        expr
 
     member private this.equality() =
         let mutable expr = this.comparison ()
@@ -184,7 +260,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         else
             error (peek ()) "bad expression"
 
-    member this.parse() =
+    member this.parse() : Program =
         let statements = ResizeArray()
 
         while not (isAtEnd ()) do
