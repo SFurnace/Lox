@@ -9,10 +9,11 @@
       <Compile Include="Entity\Token.fs" />
       <Compile Include="Entity\AST.fs" />
       <Compile Include="Utils\ErrorReporter.fs" />
+      <Compile Include="Utils\Environment.fs" />
+      <Compile Include="Utils\Function.fs" />
       <Compile Include="Utils\Helpers.fs" />
       <Compile Include="Usecase\Scanner.fs" />
       <Compile Include="Usecase\Parser.fs" />
-      <Compile Include="Usecase\Environment.fs" />
       <Compile Include="Usecase\Interpreter.fs" />
       <Compile Include="Usecase\Lox.fs" />
       <Compile Include="Main.fs" />

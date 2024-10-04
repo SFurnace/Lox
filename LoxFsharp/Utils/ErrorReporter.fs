@@ -3,6 +3,7 @@
 open Microsoft.FSharp.Core
 
 exception RuntimeError of Token * string
+exception Return of Token * obj
 
 type ErrReporter() =
     member val hadError = false with get, set

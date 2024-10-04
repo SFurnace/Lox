@@ -19,7 +19,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         reporter.error (token, message)
         raise (ParserError(token, message))
 
-    let check tokenType = not (isAtEnd ()) && peek().typ.Equals(tokenType)
+    let check (tokenType: TokenType) = not (isAtEnd ()) && tokenType = peek().typ
 
     let advance () =
         if not (isAtEnd ()) then
@@ -57,10 +57,9 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
 
     member private this.declaration() : Option<Stmt> =
         try
-            if this.match1 TokenType.VAR then
-                Some(this.varDeclaration ())
-            else
-                Some(this.statement ())
+            if this.match1 TokenType.VAR then Some(this.varDeclaration ())
+            elif this.match1 TokenType.FUN then Some(this.funDeclaration "function")
+            else Some(this.statement ())
         with :? ParserError ->
             synchronize ()
             None
@@ -71,12 +70,32 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         consume TokenType.SEMICOLON "Expect ';' after variable declaration." |> ignore
         Stmt.VarDecl { identifier = name; value = value }
 
+    member private this.funDeclaration kind =
+        let name = consume TokenType.IDENTIFIER $"Expect {kind} name."
+        consume TokenType.LEFT_PAREN $"Expect '(' after {kind} name." |> ignore
+        let parameters = ResizeArray()
+
+        if not (check TokenType.RIGHT_PAREN) then
+            parameters.Add(consume TokenType.IDENTIFIER "Expect parameter name.")
+
+            while this.match1 TokenType.COMMA do
+                if parameters.Count >= 255 then
+                    error (peek ()) "Can't have more than 255 parameters."
+
+                parameters.Add(consume TokenType.IDENTIFIER "Expect parameter name.")
+
+        consume TokenType.RIGHT_PAREN "Expect ')' after parameters." |> ignore
+        consume TokenType.LEFT_BRACE $"Expect '{{' before {kind} parameters." |> ignore
+        let body = this.block ()
+        Stmt.FunDecl { name = name; parameters = parameters; body = body }
+
     member private this.statement() : Stmt =
         if this.match1 TokenType.PRINT then this.printStatement ()
         elif this.match1 TokenType.WHILE then this.whileStatement ()
         elif this.match1 TokenType.LEFT_BRACE then this.block ()
         elif this.match1 TokenType.FOR then this.forStatement ()
         elif this.match1 TokenType.IF then this.ifStatement ()
+        elif this.match1 TokenType.RETURN then this.returnStatement ()
         else this.expressionStatement ()
 
     member private this.printStatement() =
@@ -147,6 +166,16 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
             Stmt.If { condition = condition; thenStmt = thenStmt; elseStmt = Some(elseStmt) }
         else
             Stmt.If { condition = condition; thenStmt = thenStmt; elseStmt = None }
+
+    member private this.returnStatement() =
+        let keyword = previous ()
+        let mutable value = Expr.Literal LiteralExpr.Nil
+
+        if not (check TokenType.SEMICOLON) then
+            value <- this.expression ()
+
+        consume TokenType.SEMICOLON "Expect ';' after return value." |> ignore
+        Stmt.Return(keyword, value)
 
     member private this.expressionStatement() =
         let expr = this.expression ()
@@ -238,7 +267,30 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
             let operand = this.unary ()
             Expr.Unary { operator = operation; operand = operand }
         else
-            this.primary ()
+            this.call ()
+
+    member private this.call() =
+        let mutable expr = this.primary ()
+
+        while this.match1 TokenType.LEFT_PAREN do
+            expr <- this.finishCall expr
+
+        expr
+
+    member private this.finishCall expr =
+        let args = ResizeArray()
+
+        if not (check TokenType.RIGHT_PAREN) then
+            args.Add(this.expression ())
+
+            while this.match1 TokenType.COMMA && not (peek().typ = TokenType.RIGHT_PAREN) do
+                if args.Count >= 255 then
+                    error (peek ()) "Can't have more than 255 arguments."
+
+                args.Add(this.expression ())
+
+        let paren = consume TokenType.RIGHT_PAREN "Expect ')' after arguments."
+        Expr.Call { callee = expr; paren = paren; args = args }
 
     member private this.primary() =
         if this.match1 TokenType.FALSE then
