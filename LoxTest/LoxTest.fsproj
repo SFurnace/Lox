@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="TestInterpreter.fs" />
     <Compile Include="TestScanner.fs" />
+    <Compile Include="TestInterpreter.fs" />
   </ItemGroup>
 
   <ItemGroup>

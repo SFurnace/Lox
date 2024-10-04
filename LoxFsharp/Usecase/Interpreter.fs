@@ -1,8 +1,18 @@
-﻿namespace LoxFsharp
-
+﻿namespace rec LoxFsharp
 
 type Interpreter(reporter: ErrReporter) =
     let globalEnv = Environment()
+
+    do
+        globalEnv.define
+            "clock"
+            { new LoxCallable with
+                member this.arity = 0
+                member this.call _ _ = float (System.DateTimeOffset.Now.ToUnixTimeMilliseconds()) / 1000.0 :> obj }
+
+    interface LoxInterpreter with
+        member this.globalEnv = globalEnv
+        member this.execute(stmt, env) = this.execute (stmt, env)
 
     member this.interpret(program: Program) =
         try
@@ -34,6 +44,10 @@ type Interpreter(reporter: ErrReporter) =
         | Stmt.While s ->
             while Utils.isTruthy (this.eval s.condition env) do
                 this.execute (s.body, env)
+        | Stmt.FunDecl s -> env.define s.name.lexme (LoxFunction(s))
+        | Stmt.Return(token, expr) ->
+            let value = this.eval expr env
+            raise (Return(token, value))
 
 
     member this.eval expr env : obj =
@@ -110,3 +124,15 @@ type Interpreter(reporter: ErrReporter) =
                 result <- this.eval v.right env
 
             result
+
+        | Expr.Call c ->
+            let callee = this.eval c.callee env
+            let args = c.args.ConvertAll(fun a -> this.eval a env)
+
+            match callee with
+            | :? LoxCallable as callee ->
+                if args.Count <> callee.arity then
+                    raise (RuntimeError(c.paren, $"Expected {callee.arity} arguments but got {args.Count}."))
+
+                callee.call this args
+            | _ -> raise (RuntimeError(c.paren, "Can only call functions and classes."))
