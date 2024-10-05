@@ -1,6 +1,5 @@
 ﻿module LoxFsharp.Utils
 
-open System
 open Microsoft.FSharp.Core
 
 let isTruthy (v: obj) = not (v = null || v = false)
@@ -13,6 +12,7 @@ let stringify (o: obj) =
     | :? float ->
         let s = $"{o}"
         if (o :? float) && s.EndsWith ".0" then s.Substring(0, s.Length - 2) else s
+    | :? bool -> $"{o}".ToLower()
     | _ -> $"{o}"
 
 let checkNumberOperands operatorToken (operands: obj[]) =

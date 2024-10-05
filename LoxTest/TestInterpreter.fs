@@ -10,6 +10,24 @@ type TestInterpreter() =
     member this.Setup() = System.Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
 
     [<Test>]
+    member this.``Test Print``() =
+        let lox = Lox()
+        lox.run """
+var a;
+var b = nil;
+print a;
+print b;
+print a == b;
+a = true;
+b = true;
+print a == b;
+print a;
+print b = false;
+print a == b;
+print b;
+"""
+    
+    [<Test>]
     member this.``Test Run File``() =
         let lox = Lox()
         lox.runFile "programs\1.lox"

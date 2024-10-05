@@ -24,6 +24,6 @@ type LoxFunction(decl: FuncDeclStmt) =
                 interpreter.execute (decl.body, env)
                 Expr.Literal LiteralExpr.Nil
             with :? Return as e ->
-                e.Data1
+                e.value
 
     override this.ToString() = $"<fn {decl.name.lexme}>"
