@@ -1,9 +1,6 @@
-﻿namespace LoxFsharp
+﻿namespace rec LoxFsharp
 
 open Microsoft.FSharp.Core
-
-exception RuntimeError of Token * string
-exception Return of Token * obj
 
 type ErrReporter() =
     member val hadError = false with get, set
@@ -23,4 +20,12 @@ type ErrReporter() =
 
     member this.runtimeError(e: RuntimeError) =
         this.hadRuntimeError <- true
-        printfn $"{e.Data1}\n[line {e.Data0.line}]"
+        printfn $"{e.Message}\n[line {e.token.line}]"
+
+type RuntimeError(token: Token, message: string) =
+    inherit System.Exception(message)
+    member val token = token
+
+type Return(token: Token, value: obj) =
+    inherit RuntimeError(token, "")
+    member val value = value
