@@ -1,17 +1,17 @@
 ﻿namespace rec LoxFsharp
 
 type Interpreter(reporter: ErrReporter) =
-    let globalEnv = Environment()
+    let globalEnv = Environment() :> LoxEnvironment
 
     do
-        globalEnv.define
-            "clock"
+        globalEnv.define (
+            { typ = TokenType.IDENTIFIER; lexme = "clock"; line = -1; literal = null },
             { new LoxCallable with
                 member this.arity = 0
-                member this.call _ _ = float (System.DateTimeOffset.Now.ToUnixTimeMilliseconds()) / 1000.0 :> obj }
+                member this.call(_, _) = float (System.DateTimeOffset.Now.ToUnixTimeMilliseconds()) / 1000.0 :> obj }
+        )
 
     interface LoxInterpreter with
-        member this.globalEnv = globalEnv
         member this.execute(stmt, env) = this.execute (stmt, env)
 
     member this.interpret(program: Program) =
@@ -21,15 +21,15 @@ type Interpreter(reporter: ErrReporter) =
         with :? RuntimeError as e ->
             reporter.runtimeError e
 
-    member this.execute(stmt: Stmt, env: Environment) =
+    member this.execute(stmt: Stmt, env) =
         match stmt with
         | Stmt.Expr expr -> this.eval expr env |> ignore
         | Stmt.Print expr -> printfn $"{Utils.stringify (this.eval expr env)}"
         | Stmt.VarDecl stmt ->
             if stmt.value.IsSome then
-                env.define stmt.identifier.lexme (this.eval stmt.value.Value env)
+                env.define (stmt.identifier, (this.eval stmt.value.Value env))
             else
-                env.define stmt.identifier.lexme null
+                env.define (stmt.identifier, null)
         | Stmt.Block stmts ->
             let newEnv = Environment(Some(env))
 
@@ -44,7 +44,7 @@ type Interpreter(reporter: ErrReporter) =
         | Stmt.While s ->
             while Utils.isTruthy (this.eval s.condition env) do
                 this.execute (s.body, env)
-        | Stmt.FunDecl s -> env.define s.name.lexme (LoxFunction(s))
+        | Stmt.FunDecl s -> env.define (s.name, LoxFunction(s, env))
         | Stmt.Return(token, expr) ->
             let value = this.eval expr env
             raise (Return(token, value))
@@ -60,58 +60,58 @@ type Interpreter(reporter: ErrReporter) =
             | LiteralExpr.False -> false
             | LiteralExpr.Number f -> f
             | LiteralExpr.String s -> s
-        | Expr.Unary { operator = op; operand = v } ->
-            match op.typ with
+        | Expr.Unary v ->
+            match v.operator.typ with
             | TokenType.BANG -> not (Utils.isTruthy v)
             | TokenType.MINUS ->
-                let v = this.eval v env
-                Utils.checkNumberOperands op [| v |]
-                -(v :?> float)
-            | _ -> reporter.error (op, "Invalid unary expr.")
-        | Expr.Binary { left = l; operator = op; right = r } ->
-            match op.typ with
+                let tmp = this.eval v.operand env
+                Utils.checkNumberOperands v.operator [| tmp |]
+                -(tmp :?> float)
+            | _ -> reporter.error (v.operator, "Invalid unary expr.")
+        | Expr.Binary v ->
+            match v.operator.typ with
             | TokenType.MINUS ->
-                let l, r = (this.eval l env), (this.eval r env)
-                Utils.checkNumberOperands op [| l; r |]
+                let l, r = (this.eval v.left env), (this.eval v.right env)
+                Utils.checkNumberOperands v.operator [| l; r |]
                 (l :?> float) - (r :?> float) :> obj
             | TokenType.SLASH ->
-                let l, r = (this.eval l env), (this.eval r env)
-                Utils.checkNumberOperands op [| l; r |]
+                let l, r = (this.eval v.left env), (this.eval v.right env)
+                Utils.checkNumberOperands v.operator [| l; r |]
                 (l :?> float) / (r :?> float) :> obj
             | TokenType.STAR ->
-                let l, r = (this.eval l env), (this.eval r env)
-                Utils.checkNumberOperands op [| l; r |]
+                let l, r = (this.eval v.left env), (this.eval v.right env)
+                Utils.checkNumberOperands v.operator [| l; r |]
                 (l :?> float) * (r :?> float) :> obj
             | TokenType.PLUS ->
-                match (this.eval l env), (this.eval r env) with
+                match (this.eval v.left env), (this.eval v.right env) with
                 | :? float as l, (:? float as r) -> l + r :> obj
                 | :? string as l, (:? string as r) -> l + r :> obj
-                | _ -> raise (RuntimeError(op, "Operands must be two numbers or two strings."))
+                | _ -> raise (RuntimeError(v.operator, "Operands must be two numbers or two strings."))
             | TokenType.GREATER ->
-                let l, r = (this.eval l env), (this.eval r env)
-                Utils.checkNumberOperands op [| l; r |]
+                let l, r = (this.eval v.left env), (this.eval v.right env)
+                Utils.checkNumberOperands v.operator [| l; r |]
                 (l :?> float) > (r :?> float) :> obj
             | TokenType.GREATER_EQUAL ->
-                let l, r = (this.eval l env), (this.eval r env)
-                Utils.checkNumberOperands op [| l; r |]
+                let l, r = (this.eval v.left env), (this.eval v.right env)
+                Utils.checkNumberOperands v.operator [| l; r |]
                 (l :?> float) >= (r :?> float) :> obj
             | TokenType.LESS ->
-                let l, r = (this.eval l env), (this.eval r env)
-                Utils.checkNumberOperands op [| l; r |]
+                let l, r = (this.eval v.left env), (this.eval v.right env)
+                Utils.checkNumberOperands v.operator [| l; r |]
                 (l :?> float) < (r :?> float) :> obj
             | TokenType.LESS_EQUAL ->
-                let l, r = (this.eval l env), (this.eval r env)
-                Utils.checkNumberOperands op [| l; r |]
+                let l, r = (this.eval v.left env), (this.eval v.right env)
+                Utils.checkNumberOperands v.operator [| l; r |]
                 (l :?> float) <= (r :?> float) :> obj
-            | TokenType.BANG_EQUAL -> not (Utils.isEqual (this.eval l env) (this.eval r env))
-            | TokenType.EQUAL_EQUAL -> Utils.isEqual (this.eval l env) (this.eval r env)
-            | _ -> raise (RuntimeError(op, "Invalid binary expr."))
+            | TokenType.BANG_EQUAL -> not (Utils.isEqual (this.eval v.left env) (this.eval v.right env))
+            | TokenType.EQUAL_EQUAL -> Utils.isEqual (this.eval v.left env) (this.eval v.right env)
+            | _ -> raise (RuntimeError(v.operator, "Invalid binary expr."))
 
-        | Expr.Variable t -> env.get t
+        | Expr.Variable v -> env.get v
 
-        | Expr.Assign a ->
-            let value = this.eval a.value env
-            env.assign a.name value
+        | Expr.Assign v ->
+            let value = this.eval v.value env
+            env.assign (v.name, value)
             value
 
         | Expr.Logical v ->
@@ -125,14 +125,14 @@ type Interpreter(reporter: ErrReporter) =
 
             result
 
-        | Expr.Call c ->
-            let callee = this.eval c.callee env
-            let args = c.args.ConvertAll(fun a -> this.eval a env)
+        | Expr.Call v ->
+            let callee = this.eval v.callee env
+            let args = v.args.ConvertAll(fun a -> this.eval a env)
 
             match callee with
             | :? LoxCallable as callee ->
                 if args.Count <> callee.arity then
-                    raise (RuntimeError(c.paren, $"Expected {callee.arity} arguments but got {args.Count}."))
+                    raise (RuntimeError(v.paren, $"Expected {callee.arity} arguments but got {args.Count}."))
 
-                callee.call this args
-            | _ -> raise (RuntimeError(c.paren, "Can only call functions and classes."))
+                callee.call (this, args)
+            | _ -> raise (RuntimeError(v.paren, "Can only call functions and classes."))

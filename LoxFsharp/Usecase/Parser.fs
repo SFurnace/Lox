@@ -1,12 +1,10 @@
 ﻿namespace LoxFsharp
 
 open System
-open System.Collections.Generic
-open Microsoft.FSharp.Core
 
 exception ParserError of Token * string
 
-type Parser(tokens: IList<Token>, reporter: ErrReporter) =
+type Parser(tokens: ResizeArray<Token>, reporter: ErrReporter) =
     let mutable current = 0
 
     let peek () = tokens[current]
@@ -68,7 +66,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         let name = consume TokenType.IDENTIFIER "Expect variable name."
         let value = if this.match1 TokenType.EQUAL then Some(this.expression ()) else None
         consume TokenType.SEMICOLON "Expect ';' after variable declaration." |> ignore
-        Stmt.VarDecl { identifier = name; value = value }
+        Stmt.VarDecl {| identifier = name; value = value |}
 
     member private this.funDeclaration kind =
         let name = consume TokenType.IDENTIFIER $"Expect {kind} name."
@@ -87,7 +85,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         consume TokenType.RIGHT_PAREN "Expect ')' after parameters." |> ignore
         consume TokenType.LEFT_BRACE $"Expect '{{' before {kind} parameters." |> ignore
         let body = this.block ()
-        Stmt.FunDecl { name = name; parameters = parameters; body = body }
+        Stmt.FunDecl {| name = name; parameters = parameters; body = body |}
 
     member private this.statement() : Stmt =
         if this.match1 TokenType.PRINT then this.printStatement ()
@@ -108,7 +106,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         let condition = this.expression ()
         consume TokenType.RIGHT_PAREN "Expect ')' after while condition." |> ignore
         let body = this.statement ()
-        Stmt.While { condition = condition; body = body }
+        Stmt.While {| condition = condition; body = body |}
 
     member private this.block() =
         let declarations = ResizeArray()
@@ -151,9 +149,9 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
             condition <- Some(Expr.Literal LiteralExpr.True)
 
         if initializer.IsSome then
-            Stmt.Block(ResizeArray([ initializer.Value; Stmt.While { condition = condition.Value; body = body } ]))
+            Stmt.Block(ResizeArray([ initializer.Value; Stmt.While {| condition = condition.Value; body = body |} ]))
         else
-            Stmt.While { condition = condition.Value; body = body }
+            Stmt.While {| condition = condition.Value; body = body |}
 
     member private this.ifStatement() =
         consume TokenType.LEFT_PAREN "Expect '(' after 'if'." |> ignore
@@ -163,9 +161,9 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
 
         if this.match1 TokenType.ELSE then
             let elseStmt = this.statement ()
-            Stmt.If { condition = condition; thenStmt = thenStmt; elseStmt = Some(elseStmt) }
+            Stmt.If {| condition = condition; thenStmt = thenStmt; elseStmt = Some(elseStmt) |}
         else
-            Stmt.If { condition = condition; thenStmt = thenStmt; elseStmt = None }
+            Stmt.If {| condition = condition; thenStmt = thenStmt; elseStmt = None |}
 
     member private this.returnStatement() =
         let keyword = previous ()
@@ -192,7 +190,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
             let value = this.assignment ()
 
             match expr with
-            | Expr.Variable t -> Expr.Assign { name = t; value = value }
+            | Expr.Variable t -> Expr.Assign {| name = t; value = value |}
             | _ -> error equals "Invalid assignment target."
         else
             expr
@@ -203,7 +201,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         while this.match1 TokenType.OR do
             let operator = previous ()
             let right = this.``and`` ()
-            expr <- Expr.Logical { left = expr; operator = operator; right = right }
+            expr <- Expr.Logical {| left = expr; operator = operator; right = right |}
 
         expr
 
@@ -213,7 +211,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         while this.match1 TokenType.AND do
             let operator = previous ()
             let right = this.equality ()
-            expr <- Expr.Logical { left = expr; operator = operator; right = right }
+            expr <- Expr.Logical {| left = expr; operator = operator; right = right |}
 
         expr
 
@@ -224,7 +222,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
             let operation = previous ()
             let right = this.comparison ()
 
-            expr <- Expr.Binary { left = expr; operator = operation; right = right }
+            expr <- Expr.Binary {| left = expr; operator = operation; right = right |}
 
         expr
 
@@ -235,7 +233,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
             let operation = previous ()
             let right = this.term ()
 
-            expr <- Expr.Binary { left = expr; operator = operation; right = right }
+            expr <- Expr.Binary {| left = expr; operator = operation; right = right |}
 
         expr
 
@@ -246,7 +244,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
             let operation = previous ()
             let right = this.factor ()
 
-            expr <- Expr.Binary { left = expr; operator = operation; right = right }
+            expr <- Expr.Binary {| left = expr; operator = operation; right = right |}
 
         expr
 
@@ -257,7 +255,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
             let operation = previous ()
             let right = this.unary ()
 
-            expr <- Expr.Binary { left = expr; operator = operation; right = right }
+            expr <- Expr.Binary {| left = expr; operator = operation; right = right |}
 
         expr
 
@@ -265,7 +263,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
         if this.match1 (TokenType.BANG, TokenType.MINUS) then
             let operation = previous ()
             let operand = this.unary ()
-            Expr.Unary { operator = operation; operand = operand }
+            Expr.Unary {| operator = operation; operand = operand |}
         else
             this.call ()
 
@@ -290,7 +288,7 @@ type Parser(tokens: IList<Token>, reporter: ErrReporter) =
                 args.Add(this.expression ())
 
         let paren = consume TokenType.RIGHT_PAREN "Expect ')' after arguments."
-        Expr.Call { callee = expr; paren = paren; args = args }
+        Expr.Call {| callee = expr; paren = paren; args = args |}
 
     member private this.primary() =
         if this.match1 TokenType.FALSE then
