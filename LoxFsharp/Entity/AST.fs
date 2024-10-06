@@ -1,41 +1,29 @@
 ﻿namespace rec LoxFsharp
 
-open Microsoft.FSharp.Core
-open System.Collections.Generic
-open Microsoft.FSharp.Quotations
-
 [<RequireQualifiedAccess>]
-type Program = List<Stmt>
+type Program = ResizeArray<Stmt>
 
 [<RequireQualifiedAccess>]
 type Stmt =
     | Expr of Expr
     | Print of Expr
-    | VarDecl of VarDeclStmt
-    | FunDecl of FuncDeclStmt
-    | If of IfStmt
-    | While of WhileStmt
-    | Block of List<Stmt>
+    | VarDecl of {| identifier: Token; value: Option<Expr> |}
+    | FunDecl of {| name: Token; parameters: ResizeArray<Token>; body: Stmt |}
+    | If of {| condition: Expr; thenStmt: Stmt; elseStmt: Option<Stmt> |}
+    | While of {| condition: Expr; body: Stmt |}
+    | Block of ResizeArray<Stmt>
     | Return of Token * Expr
-
-type VarDeclStmt = { identifier: Token; value: Option<Expr> }
-
-type FuncDeclStmt = { name: Token; parameters: List<Token>; body: Stmt }
-
-type IfStmt = { condition: Expr; thenStmt: Stmt; elseStmt: Option<Stmt> }
-
-type WhileStmt = { condition: Expr; body: Stmt }
 
 [<RequireQualifiedAccess>]
 type Expr =
     | Literal of LiteralExpr
-    | Logical of LogicalExpr
-    | Unary of UnaryExpr
-    | Binary of BinaryExpr
-    | Call of CallExpr
+    | Logical of {| left: Expr; operator: Token; right: Expr |}
+    | Unary of {| operator: Token; operand: Expr |}
+    | Binary of {| left: Expr; operator: Token; right: Expr |}
+    | Call of {| callee: Expr; paren: Token; args: ResizeArray<Expr> |}
     | Grouping of Expr
     | Variable of Token
-    | Assign of AssignExpr
+    | Assign of {| name: Token; value: Expr |}
 
 [<RequireQualifiedAccess>]
 type LiteralExpr =
@@ -44,13 +32,3 @@ type LiteralExpr =
     | False
     | Number of float
     | String of string
-
-type UnaryExpr = { operator: Token; operand: Expr }
-
-type BinaryExpr = { left: Expr; operator: Token; right: Expr }
-
-type AssignExpr = { name: Token; value: Expr }
-
-type LogicalExpr = { left: Expr; operator: Token; right: Expr }
-
-type CallExpr = { callee: Expr; paren: Token; args: List<Expr> }

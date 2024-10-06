@@ -12,7 +12,9 @@ type TestInterpreter() =
     [<Test>]
     member this.``Test Print``() =
         let lox = Lox()
-        lox.run """
+
+        lox.run
+            """
 var a;
 var b = nil;
 print a;
@@ -26,7 +28,7 @@ print b = false;
 print a == b;
 print b;
 """
-    
+
     [<Test>]
     member this.``Test Run File``() =
         let lox = Lox()
@@ -189,5 +191,75 @@ fun fib(n) {
 
 for (var i = 0; i < 20; i = i + 1) {
   print fib(i);
+}
+"""
+
+    [<Test>]
+    member this.``Test Make Counter``() =
+        let lox = Lox()
+
+        lox.run
+            """
+fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    print i;
+  }
+
+  return count;
+}
+
+var counter = makeCounter();
+counter(); // "1".
+counter(); // "2".
+"""
+
+    [<Test>]
+    member this.``Test Func Scope``() =
+        let lox = Lox()
+
+        lox.run
+            """
+fun scope(a) {
+  var a = "local";
+  print a;
+}
+scope(10);
+"""
+
+    [<Test>]
+    member this.``Test Scope``() =
+        let lox = Lox()
+
+        lox.run
+            """
+var a = "outer";
+{
+  print a;
+  var a = "inner";
+  var a = 100;
+  print a;
+}
+print a;
+"""
+
+
+    
+    [<Test>]
+    member this.``Test Closure``() =
+        let lox = Lox()
+
+        lox.run
+            """
+var a = "global";
+{
+  fun showA() {
+    print a;
+  }
+
+  showA();
+  var a = "block";
+  showA();
 }
 """

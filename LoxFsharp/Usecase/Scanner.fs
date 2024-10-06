@@ -1,7 +1,6 @@
 ﻿namespace LoxFsharp
 
 open System
-open System.Collections.Generic
 
 type Scanner(source: string, reporter: ErrReporter) =
     static let keywords =
@@ -23,7 +22,7 @@ type Scanner(source: string, reporter: ErrReporter) =
               "var", TokenType.VAR
               "while", TokenType.WHILE ]
 
-    let tokens: IList<Token> = ResizeArray()
+    let tokens = ResizeArray()
     let mutable start = 0
     let mutable current = 0
     let mutable line = 1
