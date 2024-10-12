@@ -5,7 +5,7 @@ type LoxFunction(decl: {| name: Token; parameters: ResizeArray<Token>; body: Stm
         member this.arity = decl.parameters.Count
 
         member this.call(interpreter, args) =
-            let env = Environment(Some(closure)) :> LoxEnvironment
+            let env = Environment(Some(closure :?> Environment)) :> LoxEnvironment
 
             for i = 0 to (decl.parameters.Count - 1) do
                 env.define (decl.parameters[i], args[i])

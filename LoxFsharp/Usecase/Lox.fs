@@ -16,7 +16,11 @@ type Lox() =
         let stmts = parser.parse ()
 
         if not this.hadError then
-            interpreter.interpret stmts
+            let analyser = Resolver(interpreter, reporter) :> LoxStaticAnalyser
+            analyser.analyse stmts
+
+            if not this.hadError then
+                interpreter.interpret stmts
 
     member this.runFile path =
         File.ReadAllText path |> this.run

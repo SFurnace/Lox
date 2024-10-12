@@ -1,7 +1,10 @@
 ﻿namespace rec LoxFsharp
 
+open System.Collections.Generic
+
 type Interpreter(reporter: ErrReporter) =
-    let globalEnv = Environment() :> LoxEnvironment
+    let globalEnv: LoxEnvironment = Environment()
+    let locals: IDictionary<Expr, int> = Dictionary()
 
     do
         globalEnv.define (
@@ -12,45 +15,47 @@ type Interpreter(reporter: ErrReporter) =
         )
 
     interface LoxInterpreter with
-        member this.execute(stmt, env) = this.execute (stmt, env)
+        member this.resolve(var: Expr, distance: int) = locals.Add(var, distance)
+
+        member this.execute(stmt: Stmt, env) =
+            match stmt with
+            | Stmt.Expr expr -> this.eval expr env |> ignore
+            | Stmt.Print expr -> printfn $"{Utils.stringify (this.eval expr env)}"
+            | Stmt.VarDecl stmt ->
+                if stmt.value.IsSome then
+                    env.define (stmt.identifier, (this.eval stmt.value.Value env))
+                else
+                    env.define (stmt.identifier, null)
+            | Stmt.Block stmts ->
+                let newEnv = Environment(Some(env :?> Environment))
+
+                for s in stmts do
+                    (this :> LoxInterpreter).execute (s, newEnv)
+            | Stmt.If s ->
+                let v = this.eval s.condition env
+
+                if Utils.isTruthy v then
+                    (this :> LoxInterpreter).execute (s.thenStmt, env)
+                elif s.elseStmt.IsSome then
+                    (this :> LoxInterpreter).execute (s.elseStmt.Value, env)
+                else
+                    ()
+            | Stmt.While s ->
+                while Utils.isTruthy (this.eval s.condition env) do
+                    (this :> LoxInterpreter).execute (s.body, env)
+            | Stmt.FunDecl s -> env.define (s.name, LoxFunction(s, env))
+            | Stmt.Return(token, expr) ->
+                let value = this.eval expr env
+                raise (Return(token, value))
 
     member this.interpret(program: Program) =
         try
             for d in program do
-                this.execute (d, globalEnv)
+                (this :> LoxInterpreter).execute (d, globalEnv)
         with :? RuntimeError as e ->
             reporter.runtimeError e
 
-    member this.execute(stmt: Stmt, env) =
-        match stmt with
-        | Stmt.Expr expr -> this.eval expr env |> ignore
-        | Stmt.Print expr -> printfn $"{Utils.stringify (this.eval expr env)}"
-        | Stmt.VarDecl stmt ->
-            if stmt.value.IsSome then
-                env.define (stmt.identifier, (this.eval stmt.value.Value env))
-            else
-                env.define (stmt.identifier, null)
-        | Stmt.Block stmts ->
-            let newEnv = Environment(Some(env))
-
-            for s in stmts do
-                this.execute (s, newEnv)
-        | Stmt.If s ->
-            let v = this.eval s.condition env
-
-            if Utils.isTruthy v then this.execute (s.thenStmt, env)
-            elif s.elseStmt.IsSome then this.execute (s.elseStmt.Value, env)
-            else ()
-        | Stmt.While s ->
-            while Utils.isTruthy (this.eval s.condition env) do
-                this.execute (s.body, env)
-        | Stmt.FunDecl s -> env.define (s.name, LoxFunction(s, env))
-        | Stmt.Return(token, expr) ->
-            let value = this.eval expr env
-            raise (Return(token, value))
-
-
-    member this.eval expr env : obj =
+    member this.eval expr (env: LoxEnvironment) : obj =
         match expr with
         | Expr.Grouping v -> this.eval v env
         | Expr.Literal v ->
@@ -107,11 +112,16 @@ type Interpreter(reporter: ErrReporter) =
             | TokenType.EQUAL_EQUAL -> Utils.isEqual (this.eval v.left env) (this.eval v.right env)
             | _ -> raise (RuntimeError(v.operator, "Invalid binary expr."))
 
-        | Expr.Variable v -> env.get v
+        | Expr.Variable v -> if locals.ContainsKey expr then env.getAt (locals[expr], v) else globalEnv.get v
 
         | Expr.Assign v ->
             let value = this.eval v.value env
-            env.assign (v.name, value)
+
+            if locals.ContainsKey expr then
+                env.assignAt (locals[expr], v.name, value)
+            else
+                globalEnv.assign (v.name, value)
+
             value
 
         | Expr.Logical v ->

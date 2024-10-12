@@ -1,29 +1,35 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
 
-    <IsPackable>false</IsPackable>
-    <GenerateProgramFile>false</GenerateProgramFile>
-    <IsTestProject>true</IsTestProject>
-  </PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <GenerateProgramFile>false</GenerateProgramFile>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="TestOthers.fs" />
-    <Compile Include="TestScanner.fs" />
-    <Compile Include="TestInterpreter.fs" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Include="TestScanner.fs"/>
+        <Compile Include="TestInterpreter.fs"/>
+        <Compile Include="TestOthers.fs"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageReference Include="NUnit" Version="3.14.0" />
-    <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Captin.ConsoleIntercept" Version="2.0.0" />
+        <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
+        <PackageReference Include="NUnit" Version="3.14.0"/>
+        <PackageReference Include="NUnit.Analyzers" Version="3.9.0"/>
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\LoxFsharp\LoxFsharp.fsproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\LoxFsharp\LoxFsharp.fsproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="programs\1.lox"/>
+        <Content Include="programs\2.lox"/>
+    </ItemGroup>
 
 </Project>

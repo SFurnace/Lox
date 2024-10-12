@@ -1,8 +1,8 @@
 ﻿namespace rec LoxFsharp
 
-[<RequireQualifiedAccess>]
 type Program = ResizeArray<Stmt>
 
+[<ReferenceEquality>]
 [<RequireQualifiedAccess>]
 type Stmt =
     | Expr of Expr
@@ -14,6 +14,7 @@ type Stmt =
     | Block of ResizeArray<Stmt>
     | Return of Token * Expr
 
+[<ReferenceEquality>]
 [<RequireQualifiedAccess>]
 type Expr =
     | Literal of LiteralExpr
@@ -25,6 +26,7 @@ type Expr =
     | Variable of Token
     | Assign of {| name: Token; value: Expr |}
 
+[<ReferenceEquality>]
 [<RequireQualifiedAccess>]
 type LiteralExpr =
     | Nil

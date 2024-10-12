@@ -1,20 +1,17 @@
-﻿namespace LoxTest
+﻿module LoxTest.TestInterpreter
 
 open LoxFsharp
 open NUnit.Framework
 
-[<TestFixture>]
-type TestInterpreter() =
+[<OneTimeSetUp>]
+let Setup () = System.Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
 
-    [<OneTimeSetUp>]
-    member this.Setup() = System.Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
+[<Test>]
+let ``Test Print`` () =
+    let lox = Lox()
 
-    [<Test>]
-    member this.``Test Print``() =
-        let lox = Lox()
-
-        lox.run
-            """
+    lox.run
+        """
 var a;
 var b = nil;
 print a;
@@ -29,132 +26,132 @@ print a == b;
 print b;
 """
 
-    [<Test>]
-    member this.``Test Run File``() =
-        let lox = Lox()
-        lox.runFile "programs\1.lox"
+[<Test>]
+let ``Test Run File`` () =
+    let lox = Lox()
+    System.IO.Path.Combine("programs", "1.lox") |> lox.runFile
 
-    [<Test>]
-    member this.``Test IF``() =
-        let lox = Lox()
+[<Test>]
+let ``Test IF`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 var a = 101;
 if (a <= 10) {
-    print a;
+print a;
 } else if (a > 100) {
-    print a / 100;
+print a / 100;
 } else {
-    print "no.";
+print "no.";
 }
 """
 
-    [<Test>]
-    member this.``Test Variable In Condition``() =
-        let lox = Lox()
+[<Test>]
+let ``Test Variable In Condition`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 var a = 100;
 if (true) {
-    var b = 100;
+var b = 100;
 } else {
-    var b = 10;
+var b = 10;
 }
 print a + b;
 """
 
-        Assert.IsTrue lox.hadRuntimeError
+    Assert.IsTrue lox.hadRuntimeError
 
-        let lox = Lox()
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 var a = 100;
 var b;
 if (true) {
-    b = 100;
+b = 100;
 } else {
-    b = 10;
+b = 10;
 }
 print a + b;
 """
 
-        Assert.IsFalse lox.hadRuntimeError
+    Assert.IsFalse lox.hadRuntimeError
 
-    [<Test>]
-    member this.``Test While``() =
-        let lox = Lox()
+[<Test>]
+let ``Test While`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 var a = 10;
 while (a > 0) {
-    print a;
-    a = a-1;
+print a;
+a = a-1;
 }
 """
 
-    [<Test>]
-    member this.``Test For 1``() =
-        let lox = Lox()
+[<Test>]
+let ``Test For 1`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 var a = 10;
 for (var i = 0; i < a; i=i+1) {
-    print "===";
-    for (;false;) {
-        print i;
-    }
+print "===";
+for (;false;) {
     print i;
-    for (var j = 0; j <= i; j=j+1) {
-        print i * j;
-    }
+}
+print i;
+for (var j = 0; j <= i; j=j+1) {
+    print i * j;
+}
 }
 """
 
-    [<Test>]
-    member this.``Test For 2``() =
-        let lox = Lox()
+[<Test>]
+let ``Test For 2`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 var a = 0;
 var temp;
 
 for (var b = 1; a < 1000000; b = temp + b) {
-  print a;
-  temp = a;
-  a = b;
+print a;
+temp = a;
+a = b;
 }
 """
 
-    [<Test>]
-    member this.``Test Function clock``() =
-        let lox = Lox()
-        let loopUpper = 5000000
-        let loopLower = 0
+[<Test>]
+let ``Test Function clock`` () =
+    let lox = Lox()
+    let loopUpper = 5000000
+    let loopLower = 0
 
-        lox.run
-            """
+    lox.run
+        """
 print "raw loop";
 print clock();
 """
 
-        let mutable x = loopUpper
+    let mutable x = loopUpper
 
-        while x > loopLower do
-            x <- x - 1
+    while x > loopLower do
+        x <- x - 1
 
-        lox.run
-            """
+    lox.run
+        """
 print clock();
 """
 
-        lox.run
-            $"""
+    lox.run
+        $"""
 print "
 lox loop";
 print clock();
@@ -164,50 +161,50 @@ for (; a>b;a=a-1) a;
 print clock();
 """
 
-    [<Test>]
-    member this.``Test Function Declaration``() =
-        let lox = Lox()
+[<Test>]
+let ``Test Function Declaration`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 fun add(a, b) {
-  return a + b;
+return a + b;
 }
 
 print add; // "<fn add>".
 print add(1,add(2,3));
 """
 
-    [<Test>]
-    member this.``Test Fib``() =
-        let lox = Lox()
+[<Test>]
+let ``Test Fib`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 fun fib(n) {
-  if (n <= 1) return n;
-  return fib(n - 2) + fib(n - 1);
+if (n <= 1) return n;
+return fib(n - 2) + fib(n - 1);
 }
 
 for (var i = 0; i < 20; i = i + 1) {
-  print fib(i);
+print fib(i);
 }
 """
 
-    [<Test>]
-    member this.``Test Make Counter``() =
-        let lox = Lox()
+[<Test>]
+let ``Test Make Counter`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 fun makeCounter() {
-  var i = 0;
-  fun count() {
-    i = i + 1;
-    print i;
-  }
+var i = 0;
+fun count() {
+i = i + 1;
+print i;
+}
 
-  return count;
+return count;
 }
 
 var counter = makeCounter();
@@ -215,51 +212,60 @@ counter(); // "1".
 counter(); // "2".
 """
 
-    [<Test>]
-    member this.``Test Func Scope``() =
-        let lox = Lox()
+[<Test>]
+let ``Test Func Scope`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 fun scope(a) {
-  var a = "local";
-  print a;
+var a = "local";
+print a;
 }
 scope(10);
 """
 
-    [<Test>]
-    member this.``Test Scope``() =
-        let lox = Lox()
+[<Test>]
+let ``Test Scope`` () =
+    let lox = Lox()
 
-        lox.run
-            """
+    lox.run
+        """
 var a = "outer";
 {
-  print a;
-  var a = "inner";
-  var a = 100;
-  print a;
+print a;
+var a = "inner";
+var a = 100;
+print a;
 }
 print a;
 """
 
 
-    
-    [<Test>]
-    member this.``Test Closure``() =
-        let lox = Lox()
 
-        lox.run
-            """
+[<Test>]
+let ``Test Closure`` () =
+    let lox = Lox()
+
+    lox.run
+        """
 var a = "global";
 {
-  fun showA() {
-    print a;
-  }
-
-  showA();
-  var a = "block";
-  showA();
+fun showA() {
+print a;
 }
+
+showA();
+var a = "block";
+showA();
+}
+"""
+
+[<Test>]
+let ``Test Return Global`` () =
+    let lox = Lox()
+
+    lox.run
+        """
+return 100;
 """

@@ -1,12 +1,12 @@
-﻿namespace LoxTest
+﻿module LoxTest.TestOthers
 
+open System
+open Captin.ConsoleIntercept
 open NUnit.Framework
-open System.Text.Json
-open Newtonsoft.Json
 
-[<TestFixture>]
-type T() =
-    [<Test>]
-    member this.a() =
-        let a = JsonSerializer.Create()
-        a.Serialize(System.Console.Out, {| a = 12; b = 100 |})
+[<Test>]
+let ``capture stdout`` () =
+    using (ConsoleOut.Observe()) (fun observer ->
+        Console.WriteLine("'logged' (and original console too)")
+        observer.ToString())
+    |> ignore
