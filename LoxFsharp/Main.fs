@@ -8,7 +8,7 @@ let main args =
     | [||] -> lox.runPrompt ()
     | [| file |] -> lox.runFile file
     | _ ->
-        eprintfn "Usage: lox [script]"
+        eprintf "Usage: lox [script]\n"
         exit 64
 
     0

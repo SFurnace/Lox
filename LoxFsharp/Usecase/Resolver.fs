@@ -38,7 +38,7 @@ type Resolver(interpreter: LoxInterpreter, reporter: ErrReporter) as this =
 
             i <- i - 1
 
-    let resolveFunction (f: {| name: Token; parameters: ResizeArray<Token>; body: Stmt |}, typ: FunctionType) =
+    let resolveFunction (f: FuncDeclStmt, typ: FunctionType) =
         let enclosingFunction = currentFunction
         currentFunction <- typ
         beginScope ()
@@ -76,6 +76,10 @@ type Resolver(interpreter: LoxInterpreter, reporter: ErrReporter) as this =
             declare v.name
             define v.name
             resolveFunction (v, FunctionType.Function)
+
+        | Stmt.ClassDecl v ->
+            declare v.name
+            define v.name
 
         | Stmt.Expr expr -> this.analyse expr
         | Stmt.Print expr -> this.analyse expr

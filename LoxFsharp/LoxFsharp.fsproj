@@ -12,7 +12,7 @@
         <Compile Include="Domain\Lox.fs"/>
         <Compile Include="Utils\ErrorReporter.fs"/>
         <Compile Include="Utils\Environment.fs"/>
-        <Compile Include="Utils\Function.fs"/>
+        <Compile Include="Utils\LoxInternal.fs" />
         <Compile Include="Utils\Helpers.fs"/>
         <Compile Include="Usecase\Scanner.fs"/>
         <Compile Include="Usecase\Parser.fs"/>

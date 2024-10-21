@@ -20,7 +20,7 @@ type Interpreter(reporter: ErrReporter) =
         member this.execute(stmt: Stmt, env) =
             match stmt with
             | Stmt.Expr expr -> this.eval expr env |> ignore
-            | Stmt.Print expr -> printfn $"{Utils.stringify (this.eval expr env)}"
+            | Stmt.Print expr -> printf $"{Utils.stringify (this.eval expr env)}\n"
             | Stmt.VarDecl stmt ->
                 if stmt.value.IsSome then
                     env.define (stmt.identifier, (this.eval stmt.value.Value env))
@@ -47,6 +47,10 @@ type Interpreter(reporter: ErrReporter) =
             | Stmt.Return(token, expr) ->
                 let value = this.eval expr env
                 raise (Return(token, value))
+            | Stmt.ClassDecl s ->
+                env.define (s.name, null)
+                let klass = LoxClass(s.name)
+                env.assign (s.name, klass)
 
     member this.interpret(program: Program) =
         try

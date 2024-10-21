@@ -5,7 +5,7 @@ type ErrReporter() =
     member val hadRuntimeError = false with get, set
 
     member this.report line where message =
-        printfn $"[line {line}] Error{where}: {message}"
+        printf $"[line {line}] Error{where}: {message}\n"
         this.hadError <- true
 
     member this.error(line: int, message: string) = this.report line "" message
@@ -18,4 +18,4 @@ type ErrReporter() =
 
     member this.runtimeError(e: RuntimeError) =
         this.hadRuntimeError <- true
-        printfn $"{e.Message}\n[line {e.token.line}]"
+        printf $"{e.Message}\n[line {e.token.line}]\n"

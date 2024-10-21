@@ -7,24 +7,55 @@ type Program = ResizeArray<Stmt>
 type Stmt =
     | Expr of Expr
     | Print of Expr
-    | VarDecl of {| identifier: Token; value: Option<Expr> |}
-    | FunDecl of {| name: Token; parameters: ResizeArray<Token>; body: Stmt |}
-    | If of {| condition: Expr; thenStmt: Stmt; elseStmt: Option<Stmt> |}
-    | While of {| condition: Expr; body: Stmt |}
+    | VarDecl of VarDeclStmt
+    | FunDecl of FuncDeclStmt
+    | ClassDecl of ClassDeclStmt
+    | If of IfStmt
+    | While of WhileStmt
     | Block of ResizeArray<Stmt>
     | Return of Token * Expr
+
+[<ReferenceEquality>]
+type VarDeclStmt = { identifier: Token; value: Option<Expr> }
+
+[<ReferenceEquality>]
+type FuncDeclStmt = { name: Token; parameters: ResizeArray<Token>; body: Stmt }
+
+[<ReferenceEquality>]
+type ClassDeclStmt = { name: Token; methods: ResizeArray<Stmt> }
+
+[<ReferenceEquality>]
+type IfStmt = { condition: Expr; thenStmt: Stmt; elseStmt: Option<Stmt> }
+
+[<ReferenceEquality>]
+type WhileStmt = { condition: Expr; body: Stmt }
 
 [<ReferenceEquality>]
 [<RequireQualifiedAccess>]
 type Expr =
     | Literal of LiteralExpr
-    | Logical of {| left: Expr; operator: Token; right: Expr |}
-    | Unary of {| operator: Token; operand: Expr |}
-    | Binary of {| left: Expr; operator: Token; right: Expr |}
-    | Call of {| callee: Expr; paren: Token; args: ResizeArray<Expr> |}
+    | Logical of LogicalExpr
+    | Unary of UnaryExpr
+    | Binary of BinaryExpr
+    | Call of CallExpr
     | Grouping of Expr
     | Variable of Token
-    | Assign of {| name: Token; value: Expr |}
+    | Assign of AssignExpr
+
+[<ReferenceEquality>]
+type LogicalExpr = { left: Expr; operator: Token; right: Expr }
+
+[<ReferenceEquality>]
+type UnaryExpr = { operator: Token; operand: Expr }
+
+[<ReferenceEquality>]
+type BinaryExpr = { left: Expr; operator: Token; right: Expr }
+
+[<ReferenceEquality>]
+type CallExpr = { callee: Expr; paren: Token; args: ResizeArray<Expr> }
+
+[<ReferenceEquality>]
+type AssignExpr = { name: Token; value: Expr }
 
 [<ReferenceEquality>]
 [<RequireQualifiedAccess>]

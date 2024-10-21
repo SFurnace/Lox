@@ -9,9 +9,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="TestBase.fs" />
         <Compile Include="TestScanner.fs"/>
         <Compile Include="TestInterpreter.fs"/>
-        <Compile Include="TestOthers.fs"/>
     </ItemGroup>
 
     <ItemGroup>
