@@ -8,7 +8,7 @@ type Interpreter(reporter: ErrReporter) =
 
     do
         globalEnv.define (
-            { typ = TokenType.IDENTIFIER; lexme = "clock"; line = -1; literal = null },
+            { typ = TokenType.IDENTIFIER; lexeme = "clock"; line = -1; literal = null },
             { new LoxCallable with
                 member this.arity = 0
                 member this.call(_, _) = float (System.DateTimeOffset.Now.ToUnixTimeMilliseconds()) / 1000.0 :> obj }
@@ -20,7 +20,7 @@ type Interpreter(reporter: ErrReporter) =
         member this.execute(stmt: Stmt, env) =
             match stmt with
             | Stmt.Expr expr -> this.eval expr env |> ignore
-            | Stmt.Print expr -> printf $"{Utils.stringify (this.eval expr env)}\n"
+            | Stmt.Print expr -> printf $"{Utils.Stringify(this.eval expr env)}\n"
             | Stmt.VarDecl stmt ->
                 if stmt.value.IsSome then
                     env.define (stmt.identifier, (this.eval stmt.value.Value env))
@@ -34,14 +34,14 @@ type Interpreter(reporter: ErrReporter) =
             | Stmt.If s ->
                 let v = this.eval s.condition env
 
-                if Utils.isTruthy v then
+                if Utils.IsTruthy v then
                     (this :> LoxInterpreter).execute (s.thenStmt, env)
                 elif s.elseStmt.IsSome then
                     (this :> LoxInterpreter).execute (s.elseStmt.Value, env)
                 else
                     ()
             | Stmt.While s ->
-                while Utils.isTruthy (this.eval s.condition env) do
+                while Utils.IsTruthy(this.eval s.condition env) do
                     (this :> LoxInterpreter).execute (s.body, env)
             | Stmt.FunDecl s -> env.define (s.name, LoxFunction(s, env))
             | Stmt.Return(token, expr) ->
@@ -49,7 +49,13 @@ type Interpreter(reporter: ErrReporter) =
                 raise (Return(token, value))
             | Stmt.ClassDecl s ->
                 env.define (s.name, null)
-                let klass = LoxClass(s.name)
+
+                let methods = Dictionary()
+
+                for method in s.methods do
+                    methods.Add(method.name.lexeme, LoxFunction(method, env) :> LoxCallable)
+
+                let klass = LoxClass(s.name, methods)
                 env.assign (s.name, klass)
 
     member this.interpret(program: Program) =
@@ -71,25 +77,25 @@ type Interpreter(reporter: ErrReporter) =
             | LiteralExpr.String s -> s
         | Expr.Unary v ->
             match v.operator.typ with
-            | TokenType.BANG -> not (Utils.isTruthy v)
+            | TokenType.BANG -> not (Utils.IsTruthy v)
             | TokenType.MINUS ->
                 let tmp = this.eval v.operand env
-                Utils.checkNumberOperands v.operator [| tmp |]
+                Utils.CheckNumberOperands v.operator [| tmp |]
                 -(tmp :?> float)
             | _ -> reporter.error (v.operator, "Invalid unary expr.")
         | Expr.Binary v ->
             match v.operator.typ with
             | TokenType.MINUS ->
                 let l, r = (this.eval v.left env), (this.eval v.right env)
-                Utils.checkNumberOperands v.operator [| l; r |]
+                Utils.CheckNumberOperands v.operator [| l; r |]
                 (l :?> float) - (r :?> float) :> obj
             | TokenType.SLASH ->
                 let l, r = (this.eval v.left env), (this.eval v.right env)
-                Utils.checkNumberOperands v.operator [| l; r |]
+                Utils.CheckNumberOperands v.operator [| l; r |]
                 (l :?> float) / (r :?> float) :> obj
             | TokenType.STAR ->
                 let l, r = (this.eval v.left env), (this.eval v.right env)
-                Utils.checkNumberOperands v.operator [| l; r |]
+                Utils.CheckNumberOperands v.operator [| l; r |]
                 (l :?> float) * (r :?> float) :> obj
             | TokenType.PLUS ->
                 match (this.eval v.left env), (this.eval v.right env) with
@@ -98,22 +104,22 @@ type Interpreter(reporter: ErrReporter) =
                 | _ -> raise (RuntimeError(v.operator, "Operands must be two numbers or two strings."))
             | TokenType.GREATER ->
                 let l, r = (this.eval v.left env), (this.eval v.right env)
-                Utils.checkNumberOperands v.operator [| l; r |]
+                Utils.CheckNumberOperands v.operator [| l; r |]
                 (l :?> float) > (r :?> float) :> obj
             | TokenType.GREATER_EQUAL ->
                 let l, r = (this.eval v.left env), (this.eval v.right env)
-                Utils.checkNumberOperands v.operator [| l; r |]
+                Utils.CheckNumberOperands v.operator [| l; r |]
                 (l :?> float) >= (r :?> float) :> obj
             | TokenType.LESS ->
                 let l, r = (this.eval v.left env), (this.eval v.right env)
-                Utils.checkNumberOperands v.operator [| l; r |]
+                Utils.CheckNumberOperands v.operator [| l; r |]
                 (l :?> float) < (r :?> float) :> obj
             | TokenType.LESS_EQUAL ->
                 let l, r = (this.eval v.left env), (this.eval v.right env)
-                Utils.checkNumberOperands v.operator [| l; r |]
+                Utils.CheckNumberOperands v.operator [| l; r |]
                 (l :?> float) <= (r :?> float) :> obj
-            | TokenType.BANG_EQUAL -> not (Utils.isEqual (this.eval v.left env) (this.eval v.right env))
-            | TokenType.EQUAL_EQUAL -> Utils.isEqual (this.eval v.left env) (this.eval v.right env)
+            | TokenType.BANG_EQUAL -> not (Utils.IsEqual (this.eval v.left env) (this.eval v.right env))
+            | TokenType.EQUAL_EQUAL -> Utils.IsEqual (this.eval v.left env) (this.eval v.right env)
             | _ -> raise (RuntimeError(v.operator, "Invalid binary expr."))
 
         | Expr.Variable v -> if locals.ContainsKey expr then env.getAt (locals[expr], v) else globalEnv.get v
@@ -132,8 +138,8 @@ type Interpreter(reporter: ErrReporter) =
             let mutable result = this.eval v.left env
 
             if
-                (v.operator.typ = TokenType.OR && not (Utils.isTruthy result))
-                || (v.operator.typ = TokenType.AND && Utils.isTruthy result)
+                (v.operator.typ = TokenType.OR && not (Utils.IsTruthy result))
+                || (v.operator.typ = TokenType.AND && Utils.IsTruthy result)
             then
                 result <- this.eval v.right env
 
@@ -150,3 +156,15 @@ type Interpreter(reporter: ErrReporter) =
 
                 callee.call (this, args)
             | _ -> raise (RuntimeError(v.paren, "Can only call functions and classes."))
+
+        | Expr.Get v ->
+            match this.eval v.obj env with
+            | :? LoxInstance as obj -> obj.get v.name
+            | _ -> raise (RuntimeError(v.name, "Only instances have properties."))
+
+        | Expr.Set v ->
+            match this.eval v.obj env with
+            | :? LoxInstance as obj ->
+                let value = this.eval v.value env
+                obj.set (v.name, value)
+            | _ -> raise (RuntimeError(v.name, "Only instances have fields."))

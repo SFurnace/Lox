@@ -26,27 +26,27 @@ type TestScanner() =
         this.CheckOutput
             """
 { typ = VAR
-  lexme = "var"
+  lexeme = "var"
   literal = null
   line = 1 }
 { typ = IDENTIFIER
-  lexme = "a"
+  lexeme = "a"
   literal = null
   line = 1 }
 { typ = EQUAL
-  lexme = "="
+  lexeme = "="
   literal = null
   line = 1 }
 { typ = NUMBER
-  lexme = "12"
+  lexeme = "12"
   literal = 12.0
   line = 1 }
 { typ = SEMICOLON
-  lexme = ";"
+  lexeme = ";"
   literal = null
   line = 1 }
 { typ = EOF
-  lexme = ""
+  lexeme = ""
   literal = null
   line = 4 }
 """

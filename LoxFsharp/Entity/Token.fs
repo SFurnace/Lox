@@ -5,11 +5,11 @@ open System
 [<Struct>]
 type Token =
     { typ: TokenType
-      lexme: string
+      lexeme: string
       literal: Object
       line: int }
 
-    override this.ToString() = $"{this.typ} %s{this.lexme} %A{this.literal}"
+    override this.ToString() = $"{this.typ} %s{this.lexeme} %A{this.literal}"
 
 [<RequireQualifiedAccess>]
 type TokenType =

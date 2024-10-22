@@ -54,7 +54,7 @@ type Scanner(source: string, reporter: ErrReporter) =
     let addToken (typ: TokenType) (literal: Object) =
         tokens.Add
             { typ = typ
-              lexme = source.Substring(start, current - start)
+              lexeme = source.Substring(start, current - start)
               literal = literal
               line = line }
 
@@ -157,6 +157,6 @@ type Scanner(source: string, reporter: ErrReporter) =
             start <- current
             scanToken ()
 
-        tokens.Add { typ = TokenType.EOF; lexme = ""; literal = null; line = line }
+        tokens.Add { typ = TokenType.EOF; lexeme = ""; literal = null; line = line }
 
         tokens

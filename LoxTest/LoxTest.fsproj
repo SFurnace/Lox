@@ -28,6 +28,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="TestOO.fs" />
         <Content Include="programs\1.lox"/>
         <Content Include="programs\2.lox"/>
     </ItemGroup>

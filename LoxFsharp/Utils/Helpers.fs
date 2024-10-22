@@ -2,11 +2,11 @@
 
 open Microsoft.FSharp.Core
 
-let isTruthy (v: obj) = not (v = null || v = false)
+let IsTruthy (v: obj) = not (v = null || v = false)
 
-let isEqual x y = obj.Equals(x, y)
+let IsEqual x y = obj.Equals(x, y)
 
-let stringify (o: obj) =
+let Stringify (o: obj) =
     match o with
     | null -> "nil"
     | :? float ->
@@ -15,7 +15,7 @@ let stringify (o: obj) =
     | :? bool -> $"{o}".ToLower()
     | _ -> $"{o}"
 
-let checkNumberOperands operatorToken (operands: obj[]) =
+let CheckNumberOperands operatorToken (operands: obj[]) =
     let invalidOps = operands |> Array.filter (fun x -> not (x :? float))
 
     if invalidOps.Length > 0 then

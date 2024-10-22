@@ -6,6 +6,7 @@ open System.Collections.Generic
 type private FunctionType =
     | None
     | Function
+    | Method
 
 type Resolver(interpreter: LoxInterpreter, reporter: ErrReporter) as this =
     let scopes: ResizeArray<IDictionary<string, bool>> = ResizeArray()
@@ -18,21 +19,21 @@ type Resolver(interpreter: LoxInterpreter, reporter: ErrReporter) as this =
         if scopes.Count > 0 then // 全局空间不在此处理
             let s = scopes[scopes.Count - 1]
 
-            if s.ContainsKey name.lexme then
+            if s.ContainsKey name.lexeme then
                 reporter.error (name, "Already a variable with this name in this scope.")
             else
-                s.Add(name.lexme, false)
+                s.Add(name.lexeme, false)
 
     let define (name: Token) =
         if scopes.Count > 0 then // 全局空间不在此处理
-            scopes[scopes.Count - 1][name.lexme] <- true
+            scopes[scopes.Count - 1][name.lexeme] <- true
 
     let resolveLocal (expr: Expr, name: Token) =
         let mutable i = scopes.Count - 1
         let mutable resolved = false
 
         while i >= 0 && not resolved do
-            if scopes[i].ContainsKey name.lexme then
+            if scopes[i].ContainsKey name.lexeme then
                 interpreter.resolve (expr, scopes.Count - 1 - i)
                 resolved <- true
 
@@ -79,6 +80,10 @@ type Resolver(interpreter: LoxInterpreter, reporter: ErrReporter) as this =
 
         | Stmt.ClassDecl v ->
             declare v.name
+
+            for method in v.methods do
+                resolveFunction (method, FunctionType.Method)
+
             define v.name
 
         | Stmt.Expr expr -> this.analyse expr
@@ -103,8 +108,8 @@ type Resolver(interpreter: LoxInterpreter, reporter: ErrReporter) as this =
         | Expr.Variable v ->
             if
                 scopes.Count > 0
-                && scopes[scopes.Count - 1].ContainsKey(v.lexme)
-                && scopes[scopes.Count - 1][v.lexme] = false
+                && scopes[scopes.Count - 1].ContainsKey(v.lexeme)
+                && scopes[scopes.Count - 1][v.lexeme] = false
             then
                 reporter.error (v, "Can't read local variable in its own initializer.")
 
@@ -126,3 +131,7 @@ type Resolver(interpreter: LoxInterpreter, reporter: ErrReporter) as this =
         | Expr.Assign v ->
             this.analyse v.value
             resolveLocal (expr, v.name)
+        | Expr.Get v -> this.analyse v.obj
+        | Expr.Set v ->
+            this.analyse v.value
+            this.analyse v.obj

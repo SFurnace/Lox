@@ -14,7 +14,7 @@ type ErrReporter() =
         if token.typ = TokenType.EOF then
             this.report token.line " at end" message
         else
-            this.report token.line $" at '{token.lexme}'" message
+            this.report token.line $" at '{token.lexeme}'" message
 
     member this.runtimeError(e: RuntimeError) =
         this.hadRuntimeError <- true

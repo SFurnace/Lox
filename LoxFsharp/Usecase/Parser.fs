@@ -54,16 +54,16 @@ type Parser(tokens: ResizeArray<Token>, reporter: ErrReporter) =
             false
 
     member private this.declaration() : Stmt =
-        if this.match1 TokenType.VAR then this.varDeclaration ()
-        elif this.match1 TokenType.CLASS then this.classDeclaration ()
-        elif this.match1 TokenType.FUN then this.funDeclaration "function"
+        if this.match1 TokenType.VAR then Stmt.VarDecl(this.varDeclaration ())
+        elif this.match1 TokenType.CLASS then Stmt.ClassDecl(this.classDeclaration ())
+        elif this.match1 TokenType.FUN then Stmt.FunDecl(this.funDeclaration "function")
         else this.statement ()
 
     member private this.varDeclaration() =
         let name = consume TokenType.IDENTIFIER "Expect variable name."
         let value = if this.match1 TokenType.EQUAL then Some(this.expression ()) else None
         consume TokenType.SEMICOLON "Expect ';' after variable declaration." |> ignore
-        Stmt.VarDecl { identifier = name; value = value }
+        { identifier = name; value = value }
 
     member private this.classDeclaration() =
         let name = consume TokenType.IDENTIFIER "Expect class name."
@@ -74,7 +74,7 @@ type Parser(tokens: ResizeArray<Token>, reporter: ErrReporter) =
             methods.Add(this.funDeclaration "method")
 
         consume TokenType.RIGHT_BRACE "Expect '}' after class body." |> ignore
-        Stmt.ClassDecl { name = name; methods = methods }
+        { name = name; methods = methods }
 
     member private this.funDeclaration kind =
         let name = consume TokenType.IDENTIFIER $"Expect {kind} name."
@@ -93,7 +93,7 @@ type Parser(tokens: ResizeArray<Token>, reporter: ErrReporter) =
         consume TokenType.RIGHT_PAREN "Expect ')' after parameters." |> ignore
         consume TokenType.LEFT_BRACE $"Expect '{{' before {kind} parameters." |> ignore
         let body = this.block ()
-        Stmt.FunDecl { name = name; parameters = parameters; body = body }
+        { name = name; parameters = parameters; body = body }
 
     member private this.statement() : Stmt =
         if this.match1 TokenType.PRINT then this.printStatement ()
@@ -131,9 +131,12 @@ type Parser(tokens: ResizeArray<Token>, reporter: ErrReporter) =
         let mutable condition: Option<Expr> = None
         let mutable increment: Option<Expr> = None
 
-        if this.match1 TokenType.SEMICOLON then initializer <- None
-        elif this.match1 TokenType.VAR then initializer <- Some(this.varDeclaration ())
-        else initializer <- Some(this.expressionStatement ())
+        if this.match1 TokenType.SEMICOLON then
+            initializer <- None
+        elif this.match1 TokenType.VAR then
+            initializer <- Some(Stmt.VarDecl(this.varDeclaration ()))
+        else
+            initializer <- Some(this.expressionStatement ())
 
         if not (check TokenType.SEMICOLON) then
             condition <- Some(this.expression ())
@@ -196,6 +199,7 @@ type Parser(tokens: ResizeArray<Token>, reporter: ErrReporter) =
 
             match expr with
             | Expr.Variable t -> Expr.Assign { name = t; value = value }
+            | Expr.Get v -> Expr.Set { obj = v.obj; name = v.name; value = value }
             | _ -> error equals "Invalid assignment target."
         else
             expr
@@ -274,9 +278,16 @@ type Parser(tokens: ResizeArray<Token>, reporter: ErrReporter) =
 
     member private this.call() =
         let mutable expr = this.primary ()
+        let mutable mark = true
 
-        while this.match1 TokenType.LEFT_PAREN do
-            expr <- this.finishCall expr
+        while mark do
+            if this.match1 TokenType.LEFT_PAREN then
+                expr <- this.finishCall expr
+            elif this.match1 TokenType.DOT then
+                let name = consume TokenType.IDENTIFIER "Expect property name after '.'."
+                expr <- Expr.Get { obj = expr; name = name }
+            else
+                mark <- false
 
         expr
 
